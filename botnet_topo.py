@@ -32,6 +32,9 @@ class BotnetTopo(Topo):
         # Add Target/Victim Server
         victim = self.addHost("victim", ip="10.0.0.100/24", mac="00:00:00:00:00:99")
 
+        # Add IDS server with AI
+        ids = self.addHost("ids", ip="10.0.0.254/24")
+
         # Connect all nodes to the central switch
         self.addLink(h1, s1)
         self.addLink(h2, s1)
@@ -40,7 +43,7 @@ class BotnetTopo(Topo):
         self.addLink(bot3, s1)
         self.addLink(cnc, s1)
         self.addLink(victim, s1)
-
+        self.addLink(ids, s1)
 
 def run():
     topo = BotnetTopo()
@@ -53,12 +56,18 @@ def run():
     info("*** Testing Basic Connectivity ***\n")
     net.pingAll()
 
+    s1 = net.get('s1')
+    ids = net.get('ids')
+
+    s1.cmd('ovs-vsctl -- set Bridge s1 mirrors=@m '
+       '-- --id=@m create Mirror name=ids-mirror '
+       'select_all=1 output-port=' + s1.intf('s1-eth' + str(len(s1.intfList()))).name)
+
     info("*** Running CLI - Ready for Simulation ***\n")
     CLI(net)
 
     info("*** Stopping Network ***\n")
     net.stop()
-
 
 if __name__ == "__main__":
     # Set the log level to info to see Mininet output
