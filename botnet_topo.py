@@ -61,7 +61,9 @@ def run():
 
     s1.cmd('ovs-vsctl -- set Bridge s1 mirrors=@m '
        '-- --id=@m create Mirror name=ids-mirror '
-       'select_all=1 output-port=' + s1.intf('s1-eth' + str(len(s1.intfList()))).name)
+       'select_all=1 output-port=' + s1.intf('s1-eth' + str(len(s1.intfList())-1)).name)
+
+    info(f"*** ***TESTE: {s1.intfList()}")
 
     info("*** Running CLI - Ready for Simulation ***\n")
     CLI(net)
