@@ -14,7 +14,7 @@ print("[*] Loading AI Model...", file=sys.stderr)
 try:
     model = joblib.load(MODEL_PATH)
     expected_features = model.feature_names_in_
-    print(expected_features)
+    print(f"Features esperadas pelo modelo: {expected_features}")
     print("[+] Model loaded successfully. Waiting for Argus data...", file=sys.stderr)
 except Exception as e:
     print(f"[!] Error loading model: {e}", file=sys.stderr)
@@ -61,12 +61,21 @@ for line in sys.stdin:
     # Skip any repeated headers from Argus
     if 'stime' in line.lower(): continue
 
-    flow_batch.append(line.split(','))
-    print(f"SOCORRO POR FAVOR!!!!!!!!!!!!1: {flow_batch[-1]}")
+    # CORREÇÃO 1: Tratar anomalias no tamanho da linha (ex: 13 colunas em vez de 12)
+    linha_separada = line.split(',')
+    
+    # Se o Argus mandou colunas a mais (ex: vírgula sobrando no final), nós cortamos
+    if len(linha_separada) > len(headers):
+        linha_separada = linha_separada[:len(headers)]
+    # Se o Argus mandou colunas a menos, preenchemos com vazio para o Pandas não quebrar
+    elif len(linha_separada) < len(headers):
+        linha_separada.extend([''] * (len(headers) - len(linha_separada)))
+
+    flow_batch.append(linha_separada)
 
     # Once we hit our batch limit, process the data
     if len(flow_batch) >= BATCH_SIZE:
-        # 1. Convert to DataFrame
+        # 1. Convert to DataFrame (Agora seguro contra erros de tamanho)
         df_raw = pd.DataFrame(flow_batch, columns=headers)
         df = df_raw.rename(columns=col_map)
         df_alert_context = df.copy() # Keep raw data for logging
@@ -88,28 +97,25 @@ for line in sys.stdin:
         if 'Proto' in df.columns or 'Dir' in df.columns:
             df = pd.get_dummies(df, columns=[c for c in ['Proto', 'Dir'] if c in df.columns])
 
-        # df = df.reindex(columns=expected_features, fill_value=0)
-
+        # CORREÇÃO 2: Substituindo o "for" manual pela forma correta e veloz do Pandas
         # 6. Align Features exactly as the model expects
-        for col in expected_features:
-            if col not in df.columns:
-                df[col] = 0
-        df = df[expected_features]
+        df = df.reindex(columns=expected_features, fill_value=0)
 
         # 7. EXECUTE INFERENCE
         try:
             predictions = model.predict(df)
             
+            # CORREÇÃO 3: Mover as variáveis para fora do IF para evitar NameError
             # 8. Alert on Detection
             for i, pred in enumerate(predictions):
+                src = df_alert_context.iloc[i].get('SrcAddr', 'Unknown')
+                dst = df_alert_context.iloc[i].get('DstAddr', 'Unknown')
+                proto = df_alert_context.iloc[i].get('Proto', 'Unknown')
+                
                 if pred == 1:
-                    src = df_alert_context.iloc[i].get('SrcAddr', 'Unknown')
-                    dst = df_alert_context.iloc[i].get('DstAddr', 'Unknown')
-                    proto = df_alert_context.iloc[i].get('Proto', 'Unknown')
                     print(f"[🚨 BOTNET DETECTED] Source: {src} | Destination: {dst} | Protocol: {proto}")
-                    
                 else:
-                    print(f'TRAFEGO NÃO DE BOTNET: {pred}')
+                    print(f"[NORMAL TRAFFIC] Source: {src} | Destination: {dst} | Protocol: {proto}")
         except Exception as e:
             print(f"[!] Inference error on batch: {e}", file=sys.stderr)
 

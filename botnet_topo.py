@@ -33,7 +33,7 @@ class BotnetTopo(Topo):
         victim = self.addHost("victim", ip="10.0.0.100/24", mac="00:00:00:00:00:99")
 
         # Add IDS server with AI
-        ids = self.addHost("ids", ip="10.0.0.254/24")
+        ids = self.addHost("ids", ip="10.0.0.254/24", mac="00:00:00:00:00:67")
 
         # Connect all nodes to the central switch
         self.addLink(h1, s1)
