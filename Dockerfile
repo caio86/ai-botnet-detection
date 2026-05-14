@@ -4,15 +4,14 @@ WORKDIR /workspace
 
 RUN apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y \
-  argus-server \
-  argus-client \
-  tcpdump \
-  && rm -rf /var/lib/apt/lists/*
+  tcpdump argus-server argus-client python3-pip && \
+  pip3 install numpy pandas matplotlib seaborn joblib imbalanced-learn scikit-learn
+# && rm -rf /var/lib/apt/lists/*
 
 COPY ./botnet_topo.py .
 COPY argus-conf/argus.conf .
 COPY argus-conf/ra.conf .
-COPY argus.sh .
-COPY ../tungx3-random-forest.pkl .
+COPY argus-conf/argus.sh .
+COPY tungx3-random-forest.pkl .
 
 CMD ["python3", "botnet_topo"]
