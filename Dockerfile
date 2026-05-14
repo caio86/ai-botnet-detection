@@ -9,9 +9,10 @@ RUN apt-get update && \
 # && rm -rf /var/lib/apt/lists/*
 
 COPY ./botnet_topo.py .
-COPY argus-conf/argus.conf .
-COPY argus-conf/ra.conf .
-COPY argus-conf/argus.sh .
-COPY tungx3-random-forest.pkl .
+COPY ./tungx3.py .
+COPY ./argus-conf/argus.conf .
+COPY ./argus-conf/ra.conf .
+COPY ./argus-conf/argus.sh .
+COPY ./tungx3-random-forest.pkl .
 
 CMD ["python3", "botnet_topo"]
