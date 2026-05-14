@@ -59,9 +59,27 @@ def run():
     s1 = net.get('s1')
     ids = net.get('ids')
 
-    s1.cmd('ovs-vsctl -- set Bridge s1 mirrors=@m '
-       '-- --id=@m create Mirror name=ids-mirror '
-       'select_all=1 output-port=' + s1.intf('s1-eth' + str(len(s1.intfList())-1)).name)
+    # 1. Encontra automaticamente a interface correta no s1 que vai para o ids
+    # connectionsTo retorna uma lista de tuplas: (interface_no_s1, interface_no_ids)
+    interface_s1_para_ids = s1.connectionsTo(ids)[0][0]
+    nome_da_porta = interface_s1_para_ids.name # Retornará algo como 's1-eth8'
+
+    print(f"Configurando espelhamento de tráfego para a interface: {nome_da_porta}")
+
+    ids_host_port = ids.defaultIntf().name
+
+    cmd_mirror = (
+        f"ovs-vsctl -- set Bridge s1 mirrors=@m "
+        f"-- --id=@outport get Port {nome_da_porta} "
+        f"-- --id=@m create Mirror name=ids-mirror select_all=true output-port=@outport"
+    )
+
+    result = s1.cmd(cmd_mirror)
+    if result.strip():
+        info(f" OVS Mirror Output: {result}\n")
+
+    # CRITICAL: Put the IDS host interface into promiscuous mode so it doesn't drop the mirrored packets
+    ids.cmd(f"ip link set {ids_host_port} promisc on")
 
     info(f"*** ***TESTE: {s1.intfList()}")
 
