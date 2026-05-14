@@ -21,5 +21,4 @@ COPY ./tungx3.py .
 COPY pcaps/botnet-fast-flux-5-46-tratado.pcap pcaps/
 COPY pcaps/botnet-rbot-3-44-tratado.pcap pcaps/
 
-
 CMD ["python3", "botnet_topo"]
