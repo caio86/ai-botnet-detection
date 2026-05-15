@@ -45,25 +45,6 @@ def categorize_port(port):
         return 0
 
 
-# Map 'ra' output headers to your training headers
-col_map = {
-    "stime": "StartTime",
-    "dur": "Dur",
-    "proto": "Proto",
-    "saddr": "SrcAddr",
-    "sport": "Sport",
-    "dir": "Dir",
-    "daddr": "DstAddr",
-    "dport": "Dport",
-    "state": "State",
-    "stos": "sTos",
-    "dtos": "dTos",
-    "pkts": "TotPkts",
-    "bytes": "TotBytes",
-    "sbytes": "SrcBytes",
-}
-numeric_cols = ["Dur", "TotPkts", "TotBytes", "SrcBytes"]
-
 # --- 3. REAL-TIME LISTENING LOOP ---
 headers = None
 flow_batch = []
@@ -99,45 +80,18 @@ for line in sys.stdin:
     # Once we hit our batch limit, process the data
     if len(flow_batch) >= BATCH_SIZE:
         # 1. Convert to DataFrame (Agora seguro contra erros de tamanho)
-        df_raw = pd.DataFrame(flow_batch, columns=headers)
-        df = df_raw.rename(columns=col_map)
+        df = pd.DataFrame(flow_batch, columns=headers)
         df_alert_context = df.copy()  # Keep raw data for logging
 
-        # 2. Drop unused columns
-        cols_to_drop = [
-            "sTos",
-            "dTos",
-            "State",
-            "Label",
-            "StartTime",
-            "SrcAddr",
-            "DstAddr",
-        ]
-        df.drop(
-            columns=[c for c in cols_to_drop if c in df.columns],
-            inplace=True,
-            errors="ignore",
-        )
+        df.drop(columns=['sTos', 'dTos', 'State'], inplace=True)
+        df.drop(columns=['Label', 'StartTime', 'SrcAddr', 'DstAddr'], inplace=True)
+        df = pd.get_dummies(df, columns=['Proto', 'Dir'])
 
-        # 3. Format numeric values
-        for col in numeric_cols:
-            if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+        df['Sport'] = df['Sport'].apply(clean_port)
+        df['Sport'] = df['Sport'].apply(categorize_port)
+        df['Dport'] = df['Dport'].apply(clean_port)
+        df['Dport'] = df['Dport'].apply(categorize_port)        
 
-        # 4. Process Ports
-        if "Sport" in df.columns:
-            df["Sport"] = df["Sport"].apply(clean_port).apply(categorize_port)
-        if "Dport" in df.columns:
-            df["Dport"] = df["Dport"].apply(clean_port).apply(categorize_port)
-
-        # 5. One-Hot Encoding
-        if "Proto" in df.columns or "Dir" in df.columns:
-            df = pd.get_dummies(
-                df, columns=[c for c in ["Proto", "Dir"] if c in df.columns]
-            )
-
-        # CORREÇÃO 2: Substituindo o "for" manual pela forma correta e veloz do Pandas
-        # 6. Align Features exactly as the model expects
         df = df.reindex(columns=expected_features, fill_value=0)
 
         # 7. EXECUTE INFERENCE
