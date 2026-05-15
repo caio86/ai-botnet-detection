@@ -1,7 +1,7 @@
 services:
   mininet:
     build: .
-    image: brunodfrs/mininet-botnet-detection:v3
+    image: brunodfrs/mininet-botnet-detection:v5
     privileged: true
     stdin_open: true
     tty: true
