@@ -15,11 +15,21 @@ bittwiste -I botnet-rbot-3-44.pcap -O botnet-rbot-3-44-temp.pcap -T ip -s 10.0.0
 bittwiste -I botnet-rbot-3-44-temp.pcap -O botnet-rbot-3-44-tratado.pcap -T eth -s 00:00:00:00:00:11 -d 00:00:00:00:00:99
 rm botnet-rbot-3-44-temp.pcap
 
+### Injetar pcaps pelo mininet
+
 bot1 tcpreplay -i bot1-eth0 pcaps/botnet-rbot-3-44-tratado.pcap
+
+### Ler pcap / ler interface
 
 argus -F argus/argus.conf -r pcaps/botnet-rbot-3-44-tratado.pcap -w - | ra -r - -n -F argus/ra.conf -Z b | python3 tungx3.py
 argus -F argus/argus.conf -i s1-eth8 -w - | ra -r - -n -F argus/ra.conf -Z b | python3 tungx3.py
-
 argus -i s1-eth8 -w - | ra -r - -c , -s starttime,dur,proto,srcaddr,sport,dir,dstaddr,dport,sate,stos,dtos,totpkts,totbytes,srcbytes | python3 tungx3.py
+
+### Executar containers
+
+docker compose run --rm --name mininet mininet
+docker exec -it mininet bash
+
+### Colunas
 
 StartTime,Dur,Proto,SrcAddr,Sport,Dir,DstAddr,Dport,State,sTos,dTos,TotPkts,TotBytes,SrcBytes,Label
