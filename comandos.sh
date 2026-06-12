@@ -42,3 +42,7 @@ ip link set dev dummy0 up
 ### Colunas
 
 StartTime,Dur,Proto,SrcAddr,Sport,Dir,DstAddr,Dport,State,sTos,dTos,TotPkts,TotBytes,SrcBytes,Label
+
+1) python3 botnet_topo.py 
+2) argus -F argus/argus.conf -i s1-eth8 -w - | ra -r - -n -F argus/ra.conf -Z b | python3 tungx3.py
+3) bot1 tcpreplay -i bot1-eth0 pcaps/botnet-3-44-filtrado-3.pcap
