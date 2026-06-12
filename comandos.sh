@@ -18,6 +18,8 @@ rm botnet-rbot-3-44-temp.pcap
 ### Injetar pcaps pelo mininet
 
 bot1 tcpreplay -i bot1-eth0 pcaps/botnet-rbot-3-44-tratado.pcap
+bot1 tcpreplay -t -i bot1-eth0 pcaps/botnet-rbot-3-44-tratado.pcap
+tcpreplay-edit --mtu-trunc -t -i bot1-eth0 pcaps/botnet-rbot-3-44-tratado.pcap
 
 ### Ler pcap / ler interface
 
@@ -25,10 +27,17 @@ argus -F argus/argus.conf -r pcaps/botnet-rbot-3-44-tratado.pcap -w - | ra -r - 
 argus -F argus/argus.conf -i s1-eth8 -w - | ra -r - -n -F argus/ra.conf -Z b | python3 tungx3.py
 argus -i s1-eth8 -w - | ra -r - -c , -s starttime,dur,proto,srcaddr,sport,dir,dstaddr,dport,sate,stos,dtos,totpkts,totbytes,srcbytes | python3 tungx3.py
 
+argus -F argus/argus.conf -r pcaps/botnet-3-44-filtrado.pcap -w - | ra -r - -n -F argus/ra.conf -Z b | python3 tungx3.py
+
 ### Executar containers
 
 docker compose run --rm --name mininet mininet
 docker exec -it mininet bash
+
+### dummy int
+
+ip link add dev dummy0 type dummy
+ip link set dev dummy0 up
 
 ### Colunas
 

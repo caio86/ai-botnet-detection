@@ -54,6 +54,9 @@ for line in sys.stdin:
     line = line.strip()
     if not line:
         continue
+    
+    # print(line)
+    # continue
 
     # Identify and save the header row
     if headers is None:
